@@ -142,7 +142,8 @@
     box-shadow: 0 12px 40px rgba(232,255,71,0.06);
   }
 
-
+  .card:hover .thumb-overlay { opacity: 1; }
+  .card:hover .thumb-icon { background: rgba(232,255,71,0.25); transform: scale(1.12); }
 
   .thumb {
     width: 100%;
@@ -155,20 +156,21 @@
     overflow: hidden;
   }
 
-  .thumb-vid {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
+  .thumb-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
   }
 
-  .thumb-vid.loaded { opacity: 1; }
-  .thumb-vid.loaded ~ .thumb-icon { opacity: 0; }
+  /* thumb-icon সবসময় center-এ থাকবে, thumbnail-এর উপরে */
+  .thumb .thumb-icon {
+    position: absolute;
+    z-index: 2;
+  }
 
   .thumb-icon {
-    position: relative; z-index: 1;
     width: 54px; height: 54px;
     background: rgba(232,255,71,0.1);
     border: 1.5px solid var(--accent);
@@ -176,7 +178,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, transform 0.2s, opacity 0.3s;
+    transition: background 0.2s, transform 0.2s;
   }
 
   .thumb-icon::after {
@@ -190,35 +192,10 @@
 
   .thumb-overlay {
     position: absolute; inset: 0;
-    z-index: 2;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0);
-    transition: background 0.2s;
-  }
-
-  .card:hover .thumb-overlay { background: rgba(0,0,0,0.38); }
-
-  .thumb-play {
-    width: 54px; height: 54px;
-    background: rgba(232,255,71,0.15);
-    border: 1.5px solid var(--accent);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(232,255,71,0.06), transparent);
     opacity: 0;
-    transform: scale(0.85);
-    transition: opacity 0.2s, transform 0.2s, background 0.2s;
+    transition: opacity 0.2s;
   }
-
-  .thumb-play::after {
-    content: '';
-    width: 0; height: 0;
-    border-style: solid;
-    border-width: 9px 0 9px 17px;
-    border-color: transparent transparent transparent var(--accent);
-    margin-left: 4px;
-  }
-
-  .card:hover .thumb-play { opacity: 1; transform: scale(1.08); background: rgba(232,255,71,0.28); }
 
   .card-body {
     padding: 1rem 1.2rem;
@@ -570,9 +547,10 @@
       card.className = 'card';
       card.style.animationDelay = (i * 0.045) + 's';
       card.innerHTML = `
-        <div class="thumb">
+        <div class="thumb" id="thumb-${i}">
           <div class="thumb-overlay"></div>
-          <div class="thumb-icon"></div>
+          <div class="thumb-icon" id="thumb-icon-${i}"></div>
+          <img class="thumb-img" id="thumb-img-${i}" alt="" style="display:none;">
         </div>
         <div class="card-body">
           <div class="card-num">#${String(i+1).padStart(3,'0')}</div>
@@ -583,6 +561,7 @@
           </div>
         </div>
       `;
+      captureThumb(v.url, i);
       card.addEventListener('click', () => openModal(v, i));
       grid.appendChild(card);
     });
@@ -608,6 +587,43 @@
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── THUMBNAIL CAPTURE ──
+  function captureThumb(url, index) {
+    const vid = document.createElement('video');
+    vid.crossOrigin = 'anonymous';
+    vid.muted = true;
+    vid.preload = 'metadata';
+    vid.src = url;
+
+    vid.addEventListener('loadeddata', () => {
+      vid.currentTime = 0.5;
+    }, { once: true });
+
+    vid.addEventListener('seeked', () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = vid.videoWidth || 640;
+        canvas.height = vid.videoHeight || 360;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        const img = document.getElementById('thumb-img-' + index);
+        const icon = document.getElementById('thumb-icon-' + index);
+        if (img) {
+          img.src = dataUrl;
+          img.style.display = 'block';
+        }
+        if (icon) icon.style.display = 'none';
+      } catch(e) {
+        // CORS বা অন্য কারণে capture ব্যর্থ হলে icon থাকবে
+      }
+      vid.src = '';
+    }, { once: true });
+
+    vid.load();
+  }
 
   // ── INIT ──
   loadVideos().then(renderGrid);
