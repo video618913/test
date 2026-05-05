@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>অ্যাডমিন প্যানেল — ভিডিও গ্যালারি</title>
+<script src="config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #e8ff47;
+    --accent2: #ff4757;
+    --text: #e8e8f0;
+    --muted: #555568;
+    --card-bg: #13131d;
+    --success: #2ecc71;
+    --warn: #f39c12;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+    pointer-events: none; z-index: 1000;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    z-index: 900;
+  }
+
+  .login-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 3rem;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .login-icon {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+
+  .login-box h2 {
+    font-family: 'Tiro Bangla', serif;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .login-box p {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+  }
+
+  .login-field { position: relative; margin-bottom: 1rem; }
+
+  .login-field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.8rem 2.8rem 0.8rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    letter-spacing: 0.1em;
+  }
+
+  .login-field input:focus { border-color: var(--accent); }
+
+  .toggle-pass {
+    position: absolute; right: 0.8rem; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 0.75rem; font-family: 'Space Mono', monospace;
+    transition: color 0.2s;
+  }
+
+  .toggle-pass:hover { color: var(--accent); }
+
+  .btn-login {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+
+  .btn-login:hover { background: #d4e83d; }
+
+  .login-error {
+    font-size: 0.65rem;
+    color: var(--accent2);
+    margin-top: 0.8rem;
+    min-height: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .login-box .shake {
+    animation: shake 0.4s ease;
+    border-color: var(--accent2) !important;
+  }
+
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }
+
+  /* ── ADMIN LAYOUT ── */
+  #adminApp { display: none; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+
+  .back { color: var(--muted); text-decoration: none; font-size: 0.7rem; letter-spacing: 0.1em; transition: color 0.2s; }
+  .back:hover { color: var(--accent); }
+
+  header h1 { font-family: 'Tiro Bangla', serif; font-size: 1.2rem; color: var(--accent); }
+
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+
+  .badge { font-size: 0.6rem; padding: 0.2rem 0.5rem; border: 1px solid var(--accent2); color: var(--accent2); letter-spacing: 0.1em; }
+
+  .btn-logout {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Space Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.1em; padding: 0.3rem 0.7rem;
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+
+  .btn-logout:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .layout { display: grid; grid-template-columns: 380px 1fr; min-height: calc(100vh - 64px); }
+
+  .sidebar { border-right: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .section-label { font-size: 0.6rem; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
+
+  .config-info {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .config-info b { color: var(--accent); }
+
+  .add-form { background: var(--card-bg); border: 1px solid var(--border); padding: 1.2rem; }
+
+  label { display: block; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 0.4rem; margin-top: 0.8rem; }
+  label:first-of-type { margin-top: 0; }
+
+  input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    padding: 0.6rem 0.8rem; outline: none; transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+
+  .add-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+
+  .btn-add {
+    background: var(--accent); color: #000; border: none;
+    padding: 0 1rem; font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    font-weight: 700; cursor: pointer; letter-spacing: 0.1em; white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .btn-add:hover { background: #d4e83d; }
+
+  .divider { border: none; border-top: 1px solid var(--border); }
+
+  .btn {
+    width: 100%; padding: 0.75rem;
+    font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
+    cursor: pointer; border: none; transition: all 0.2s; text-transform: uppercase;
+  }
+
+  .btn-primary { background: var(--accent); color: #000; font-weight: 700; }
+  .btn-primary:hover { background: #d4e83d; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status-bar {
+    border: 1px solid var(--border); padding: 0.6rem 1rem; font-size: 0.65rem; color: var(--muted);
+    display: flex; align-items: center; gap: 1rem; background: var(--card-bg);
+  }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .status-dot.ok { background: var(--success); }
+  .status-dot.warn { background: var(--warn); animation: blink 1s infinite; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .status-text { flex: 1; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    padding: 0.8rem 1.2rem; font-size: 0.7rem; letter-spacing: 0.05em;
+    z-index: 9999; opacity: 0; transform: translateY(10px);
+    transition: all 0.3s; pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success); color: #000; }
+  .toast.error { background: var(--accent2); color: #fff; }
+  .toast.info { background: var(--warn); color: #000; }
+
+  /* PANEL */
+  .panel { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .panel-header { display: flex; align-items: center; justify-content: space-between; }
+
+  .panel-title { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; }
+
+  .panel-actions { display: flex; gap: 0.8rem; }
+
+  .btn-sm {
+    padding: 0.4rem 0.8rem; font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.1em; cursor: pointer; border: 1px solid var(--border);
+    background: transparent; color: var(--text); transition: all 0.2s; text-transform: uppercase;
+  }
+
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  .video-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .video-item {
+    background: var(--card-bg); border: 1px solid var(--border);
+    padding: 0.8rem 1rem; display: flex; align-items: center; gap: 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+  .video-num { font-size: 0.6rem; color: var(--accent); min-width: 2rem; }
+
+  .video-info { flex: 1; min-width: 0; }
+
+  .video-title-text { font-family: 'Tiro Bangla', serif; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .video-url-text { font-size: 0.6rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .video-views-text { font-size: 0.6rem; color: var(--accent); margin-top: 0.2rem; }
+
+  .item-actions { display: flex; gap: 0.4rem; }
+
+  .btn-icon {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; font-size: 0.65rem; padding: 0.25rem 0.5rem;
+    font-family: 'Space Mono', monospace; transition: all 0.2s;
+  }
+
+  .btn-icon:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .empty-state { padding: 4rem; text-align: center; color: var(--muted); font-size: 0.75rem; border: 1px dashed var(--border); }
+
+  @media (max-width: 768px) {
+    header { padding: 1rem 1.2rem; }
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .panel { padding: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <span class="login-icon">🔒</span>
+    <h2>অ্যাডমিন লগইন</h2>
+    <p>ADMIN ACCESS REQUIRED</p>
+    <div class="login-field">
+      <input type="password" id="passInput" placeholder="পাসওয়ার্ড দিন" autocomplete="current-password">
+      <button class="toggle-pass" onclick="togglePass()">SHOW</button>
+    </div>
+    <button class="btn-login" onclick="doLogin()">প্রবেশ করুন →</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <header>
+    <a class="back" href="index.html">← গ্যালারিতে ফিরুন</a>
+    <h1>⚙ অ্যাডমিন প্যানেল</h1>
+    <div class="header-right">
+      <span class="badge">ADMIN ONLY</span>
+      <button class="btn-logout" onclick="doLogout()">✕ লগআউট</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+
+      <!-- Config info (read-only display) -->
+      <div>
+        <span class="section-label">// সক্রিয় কনফিগ</span>
+        <div class="config-info" id="configInfo">লোড হচ্ছে...</div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border)">
+
+      <!-- Add video -->
+      <div>
+        <span class="section-label">// নতুন ভিডিও যোগ করুন</span>
+        <div class="add-form">
+          <label>Catbox.moe URL *</label>
+          <input type="url" id="newUrl" placeholder="https://files.catbox.moe/abc123.mp4">
+          <label>শিরোনাম (ঐচ্ছিক)</label>
+          <input type="text" id="newTitle" placeholder="ভিডিওর নাম...">
+          <div class="add-row">
+            <button class="btn-add" onclick="addVideo()">+ যোগ করুন</button>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border)">
+
+      <!-- Save -->
+      <div>
+        <span class="section-label">// GitHub-এ পাঠান</span>
+        <button class="btn btn-primary" id="saveBtn" onclick="saveToGitHub()">↑ videos.txt আপডেট করুন</button>
+        <br>
+        <div class="status-bar">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-text" id="statusText">প্রস্তুত</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <main class="panel">
+      <div class="panel-header">
+        <div class="panel-title">ভিডিও তালিকা — <span id="listCount">0</span> টি</div>
+        <div class="panel-actions">
+          <button class="btn-sm" onclick="loadFromGitHub()">↓ GitHub থেকে লোড</button>
+          <button class="btn-sm" onclick="resetViews()">↺ Views রিসেট</button>
+          <button class="btn-sm" onclick="clearAll()">সব মুছুন</button>
+        </div>
+      </div>
+      <div class="video-list" id="videoList">
+        <div class="empty-state">GitHub থেকে লোড করুন অথবা নতুন ভিডিও যোগ করুন।</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CONFIG from window.__CFG__ (injected by GitHub Actions via config.js) ──
+  const CFG = window.__CFG__ || {};
+  const VIDEOS_FILE = 'videos.txt';
+
+  let videos  = [];
+  let _fileSha = null;
+
+  // ── LOGIN ──
+  // Session flag — পেজ রিলোড করলে আবার পাসওয়ার্ড চাইবে (sessionStorage শুধু tab বন্ধ না হওয়া পর্যন্ত)
+  function checkSession() {
+    return sessionStorage.getItem('admin_ok') === '1';
+  }
+
+  function doLogin() {
+    const val = document.getElementById('passInput').value;
+    if (!CFG.pass) {
+      // config.js লোড না হলে
+      setLoginError('config.js লোড হয়নি। Deploy সম্পন্ন হয়েছে কি?');
+      return;
+    }
+    if (val === CFG.pass) {
+      sessionStorage.setItem('admin_ok', '1');
+      showAdmin();
+    } else {
+      setLoginError('পাসওয়ার্ড ভুল!');
+      document.getElementById('passInput').classList.add('shake');
+      setTimeout(() => document.getElementById('passInput').classList.remove('shake'), 500);
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('admin_ok');
+    document.getElementById('passInput').value = '';
+    setLoginError('');
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminApp').style.display = 'none';
+  }
+
+  function showAdmin() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    showConfigInfo();
+    setStatus('ok', 'GitHub কনফিগ লোড হয়েছে');
+  }
+
+  function setLoginError(msg) {
+    document.getElementById('loginError').textContent = msg;
+  }
+
+  function togglePass() {
+    const inp = document.getElementById('passInput');
+    const btn = document.querySelector('.toggle-pass');
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'HIDE'; }
+    else { inp.type = 'password'; btn.textContent = 'SHOW'; }
+  }
+
+  document.getElementById('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  // ── CONFIG DISPLAY ──
+  function showConfigInfo() {
+    const el = document.getElementById('configInfo');
+    if (!CFG.user) {
+      el.innerHTML = '<span style="color:var(--accent2)">config.js লোড হয়নি! Deploy করুন।</span>';
+      return;
+    }
+    el.innerHTML = `
+      <b>User:</b> ${CFG.user}<br>
+      <b>Repo:</b> ${CFG.repo}<br>
+      <b>Branch:</b> ${CFG.branch}<br>
+      <b>Token:</b> ${'•'.repeat(12)} (secrets থেকে)
+    `;
+  }
+
+  // ── STATUS / TOAST ──
+  function setStatus(type, msg) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot' + (type === 'ok' ? ' ok' : type === 'warn' ? ' warn' : '');
+    document.getElementById('statusText').textContent = msg;
+  }
+
+  function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // ── GITHUB API ──
+  function ghHeaders() {
+    return {
+      Authorization: 'Bearer ' + CFG.token,
+      Accept: 'application/vnd.github+json',
+    };
+  }
+
+  async function getFileMeta() {
+    const url = `https://api.github.com/repos/${CFG.user}/${CFG.repo}/contents/${VIDEOS_FILE}?ref=${CFG.branch}`;
+    const res = await fetch(url, { headers: ghHeaders() });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error('GitHub API Error: ' + res.status);
+    return res.json();
+  }
+
+  // ── LOAD ──
+  async function loadFromGitHub() {
+    setStatus('warn', 'লোড হচ্ছে...');
+    try {
+      const meta = await getFileMeta();
+      if (!meta) {
+        _fileSha = null;
+        setStatus('ok', 'videos.txt নেই — নতুন তৈরি হবে');
+        showToast('videos.txt পাওয়া যায়নি।', 'info');
+        return;
+      }
+      _fileSha = meta.sha;
+      const text = decodeURIComponent(escape(atob(meta.content.replace(/\n/g, ''))));
+      videos = parseVideos(text);
+      renderList();
+      setStatus('ok', 'লোড সম্পন্ন ✓');
+      showToast(videos.length + ' টি ভিডিও লোড হয়েছে ✓', 'success');
+    } catch (e) {
+      setStatus('warn', 'লোড ব্যর্থ');
+      showToast('লোড ব্যর্থ: ' + e.message, 'error');
+    }
+  }
+
+  // ── SAVE ──
+  async function saveToGitHub() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'আপলোড হচ্ছে...';
+    setStatus('warn', 'GitHub-এ পাঠানো হচ্ছে...');
+
+    try {
+      if (!_fileSha) {
+        const meta = await getFileMeta();
+        if (meta) _fileSha = meta.sha;
+      }
+
+      const content = btoa(unescape(encodeURIComponent(serializeVideos())));
+      const body = {
+        message: `ভিডিও তালিকা আপডেট — ${new Date().toLocaleString('bn-BD')}`,
+        content,
+        branch: CFG.branch,
+      };
+      if (_fileSha) body.sha = _fileSha;
+
+      const res = await fetch(
+        `https://api.github.com/repos/${CFG.user}/${CFG.repo}/contents/${VIDEOS_FILE}`,
+        {
+          method: 'PUT',
+          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'HTTP ' + res.status);
+      }
+
+      const result = await res.json();
+      _fileSha = result.content?.sha || _fileSha;
+      setStatus('ok', 'সফলভাবে আপডেট হয়েছে ✓');
+      showToast('videos.txt সেভ হয়েছে ✓', 'success');
+    } catch (e) {
+      setStatus('warn', 'সেভ ব্যর্থ');
+      showToast('সেভ ব্যর্থ: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '↑ videos.txt আপডেট করুন';
+    }
+  }
+
+  // ── VIDEO MANAGEMENT ──
+  function addVideo() {
+    const url   = document.getElementById('newUrl').value.trim();
+    const title = document.getElementById('newTitle').value.trim();
+    if (!url) { showToast('URL দিন!', 'error'); return; }
+    if (!url.includes('catbox.moe') && !confirm('catbox.moe URL মনে হচ্ছে না। তবুও যোগ করবেন?')) return;
+    videos.push({ url, title: title || extractName(url), views: 0 });
+    document.getElementById('newUrl').value = '';
+    document.getElementById('newTitle').value = '';
+    renderList();
+    showToast('ভিডিও যোগ হয়েছে ✓', 'success');
+  }
+
+  function removeVideo(i) {
+    videos.splice(i, 1);
+    renderList();
+    showToast('ভিডিও মুছে গেছে', 'info');
+  }
+
+  function clearAll() {
+    if (!confirm('সব ভিডিও মুছে ফেলবেন?')) return;
+    videos = [];
+    renderList();
+    showToast('সব মুছে গেছে', 'info');
+  }
+
+  function resetViews() {
+    if (!confirm('সব ভিডিওর view count শূন্য করবেন?')) return;
+    videos = videos.map(v => ({ ...v, views: 0 }));
+    renderList();
+    showToast('Views রিসেট হয়েছে', 'info');
+  }
+
+  // ── PARSE / SERIALIZE ──
+  function parseVideos(text) {
+    return text.split('\n')
+      .map(l => l.trim())
+      .filter(l => l && !l.startsWith('#'))
+      .map(l => {
+        const p = l.split('|');
+        const url   = (p[0] || '').trim();
+        const title = (p[1] || '').trim() || extractName(url);
+        const views = parseInt(p[2]) || 0;
+        return { url, title, views };
+      });
+  }
+
+  function serializeVideos() {
+    const lines = ['# ভিডিও গ্যালারি — videos.txt', '# ফরম্যাট: URL|শিরোনাম|views', ''];
+    videos.forEach(v => lines.push(`${v.url}|${v.title}|${v.views || 0}`));
+    return lines.join('\n');
+  }
+
+  function extractName(url) {
+    try { return decodeURIComponent(url.split('/').pop()).replace(/\.[^.]+$/, ''); }
+    catch { return url; }
+  }
+
+  // ── RENDER ──
+  function renderList() {
+    const list = document.getElementById('videoList');
+    document.getElementById('listCount').textContent = videos.length;
+
+    if (!videos.length) {
+      list.innerHTML = '<div class="empty-state">কোনো ভিডিও নেই। নতুন যোগ করুন।</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    videos.forEach((v, i) => {
+      const el = document.createElement('div');
+      el.className = 'video-item';
+      el.innerHTML = `
+        <div class="video-num">#${String(i+1).padStart(3,'0')}</div>
+        <div class="video-info">
+          <div class="video-title-text">${v.title}</div>
+          <div class="video-url-text">${v.url}</div>
+          <div class="video-views-text">▶ ${v.views || 0} views</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-icon" onclick="removeVideo(${i})">✕ মুছুন</button>
+        </div>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  // Keyboard
+  document.getElementById('newTitle').addEventListener('keydown', e => { if (e.key === 'Enter') addVideo(); });
+  document.getElementById('newUrl').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('newTitle').focus(); });
+
+  // ── INIT ──
+  if (checkSession()) showAdmin();
+</script>
+</body>
+</html>
