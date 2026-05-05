@@ -1,5 +1,5 @@
 # ভিডিও গ্যালারি — videos.txt
 # ফরম্যাট: URL|শিরোনাম|views
 
-https://files.catbox.moe/grw3v8.mp4|বাংলাদেশি ভাইরাল ভিডিও|0
+https://files.catbox.moe/grw3v8.mp4|বাংলাদেশি ভাইরাল ভিডিও|1
 https://files.catbox.moe/h41hvl.mp4|বাংলা কথা সহ|1
